@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // PMat
 NumericMatrix PMat(const NumericMatrix& x);
-RcppExport SEXP _portR_PMat(SEXP xSEXP) {
+RcppExport SEXP _ClusterPortfolios_PMat(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,7 +19,7 @@ END_RCPP
 }
 // rowSumsC
 NumericVector rowSumsC(NumericMatrix x);
-RcppExport SEXP _portR_rowSumsC(SEXP xSEXP) {
+RcppExport SEXP _ClusterPortfolios_rowSumsC(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -30,12 +30,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_portR_PMat", (DL_FUNC) &_portR_PMat, 1},
-    {"_portR_rowSumsC", (DL_FUNC) &_portR_rowSumsC, 1},
+    {"_ClusterPortfolios_PMat", (DL_FUNC) &_ClusterPortfolios_PMat, 1},
+    {"_ClusterPortfolios_rowSumsC", (DL_FUNC) &_ClusterPortfolios_rowSumsC, 1},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_portR(DllInfo *dll) {
+RcppExport void R_init_ClusterPortfolios(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
