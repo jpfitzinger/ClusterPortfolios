@@ -4,8 +4,8 @@
 
 Methods implemented in this package:
 
-	-	Hierarchical Risk Parity (Lopez de Prado, 2016)
-	-	Constrained HRP (Pfitzinger & Katzke, 2019)
+ - Hierarchical Risk Parity (Lopez de Prado, 2016)
+ - Constrained HRP (Pfitzinger & Katzke, 2019)
 	
 ## Installation
 
