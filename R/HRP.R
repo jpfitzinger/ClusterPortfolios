@@ -155,8 +155,6 @@ HRP <- function(
   w.out <- c()
   for (i in 1:ncol(S)) w.out[i] <- prod(w[S[,i]==1])
 
-  w.out[idx.short] <- -w.out[idx.short]
-
   names(w.out) <- asset_names
 
   return(w.out)
