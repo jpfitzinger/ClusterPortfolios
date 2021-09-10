@@ -2,10 +2,10 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 PMat <- function(x) {
-  .Call(`_portR_PMat`, x)
+  .Call(`_ClusterPortfolios_PMat`, x)
 }
 
 rowSumsC <- function(x) {
-  .Call(`_portR_rowSumsC`, x)
+  .Call(`_ClusterPortfolios_rowSumsC`, x)
 }
 
