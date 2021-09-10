@@ -10,7 +10,7 @@ Methods implemented in this package:
 ## Installation
 
 ```
-devtools::install_github()
+devtools::install_github("https://github.com/jpfitzinger/ClusterPortfolios")
 ```
 
 ## Usage
