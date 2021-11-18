@@ -6,6 +6,10 @@ Methods implemented in this package:
 
  - Hierarchical Risk Parity (Lopez de Prado, 2016)
  - Constrained HRP (Pfitzinger & Katzke, 2019)
+ - Nested Clusters Optimization (Lopez de Prade, 2019)
+ - Clustered Minimum Variance
+ - Clustered Equal Weights
+ - Hierarchical filters of the covariance matrix
 	
 ## Installation
 
@@ -28,6 +32,10 @@ HRP(sigma, UB = 0.15, tau = 0.5)
 Lopez de Prado, M. (2016).
 Building Diversified Portfolios that Outperform Out-of-Sample.
  _SSRN Electronic Journal_.
+ 
+Lopez de Prado, M. (2019).
+A Robust Estimator of the Efficient Frontier.
+_SSRN Electronic Journal_.
 
 Pfitzinger, J., Katzke, N. (2019).
 A Constrained Hierarchical Risk Parity Algorithm with Cluster-Based Capital Allocation.
