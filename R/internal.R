@@ -8,7 +8,7 @@
 .cluster_object <- function(sigma, cluster_method) {
 
   corr <- cov2cor(sigma)
-  distmat <- ((1 - corr) / 2)^0.5
+  #distmat <- ((1 - corr) / 2)^0.5
   distmat <- dist(corr)
   if (cluster_method == "DIANA") {
     clust <- diana(as.dist(distmat))
