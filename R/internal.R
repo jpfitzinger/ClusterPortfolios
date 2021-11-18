@@ -1,20 +1,65 @@
 #' @importFrom cluster agnes
 #' @importFrom cluster diana
+#' @importFrom cluster clusGap
 #' @importFrom stats cov2cor
 #' @importFrom stats dist
+#' @importFrom stats cutree
 
-.compute_S_matrix <- function(sigma, cluster_method, tau) {
+.cluster_object <- function(sigma, cluster_method) {
 
   corr <- cov2cor(sigma)
   distmat <- ((1 - corr) / 2)^0.5
   if (cluster_method == "DIANA") {
-    clust <- cluster::diana(dist(distmat))
+    clust <- diana(as.dist(distmat))
   } else {
-    clust <- cluster::agnes(dist(distmat), method = cluster_method)
+    clust <- agnes(as.dist(distmat), method = cluster_method)
   }
 
-  cluster_order <- clust$order
-  cluster_height <- clust$height
+  return(clust)
+
+}
+
+.get_clusters <- function(sigma, cluster_method, n_clusters = NULL) {
+
+  clust <- .cluster_object(sigma, cluster_method)
+
+  if (is.null(n_clusters)) {
+
+    clusters <- NULL
+
+  } else if (n_clusters == "auto") {
+
+    if (cluster_method == "DIANA") {
+      warning("'DIANA' clustering currently not supported for automatic cluster selection. Changing cluster_method to 'complete'.")
+      cluster_method <- "complete"
+    }
+    max_clusters <- ceiling(dim(sigma)[1] / 2)
+    corr <- cov2cor(sigma)
+    distmat <- ((1 - corr) / 2)^0.5
+    opt_clust_fx <- purrr::quietly(NbClust::NbClust)
+    opt <- opt_clust_fx(diss = as.dist(distmat), max.nc = max_clusters,
+                        method = cluster_method, index = "silhouette", distance = NULL)$result
+    opt_n_clusters <- opt$Best.nc[1]
+    clusters <- factoextra::hcut(as.dist(distmat), k = opt_n_clusters,
+                                 hc_func = "agnes",
+                                 hc_method = cluster_method, isdiss = T)$cluster
+
+  } else if (is.integer(n_clusters) | is.numeric(n_clusters)) {
+
+    clusters <- cutree(clust, k = n_clusters)
+
+  }
+
+  return(list(cluster_object = clust, clusters = clusters))
+
+}
+
+.compute_S_matrix <- function(sigma, cluster_method, tau) {
+
+  clust <- .get_clusters(sigma, cluster_method)
+
+  cluster_order <- clust$cluster_object$order
+  cluster_height <- clust$cluster_object$height
 
   bisect.inner <- function(cluster_order, cluster_height, tau, corr, sigma) {
 
