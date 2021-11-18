@@ -103,8 +103,8 @@ NCO <- function(
         sigma_sub <- sigma[idx, idx]
         n_sub <- sum(idx)
 
-        UB_inner <- UB[idx] / min(sum(UB[idx]), sum(w_inter[idx]))
-        LB_inner <- LB[idx] / max(sum(LB[idx]), sum(w_inter[idx]))
+        UB_inner <- UB[idx] / min(sum(UB[idx]), max(sum(w_inter[idx]), 0.001))
+        LB_inner <- LB[idx] / max(sum(LB[idx]), max(sum(w_inter[idx]), 0.001))
 
         w <- MV(sigma_sub, UB = UB_inner, LB = LB_inner)
 
