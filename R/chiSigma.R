@@ -16,6 +16,8 @@
 #' @param mu a \eqn{(N \times 1)}{(N x 1)} vector of estimated returns.
 #' @param cluster_method hierarchical cluster algorithm used to construct an asset hierarchy.
 #' @param meta_loss a loss function of the most diversified hierarchical allocation graph.
+#' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.
+#' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.
 #' @param gamma risk aversion parameter. Default: \code{gamma = 0}.
 #' @return A \eqn{(N \times N)}{(N x N)} filtered covariance matrix.
 #' @author Johann Pfitzinger
@@ -35,6 +37,8 @@ chiSigma <- function(
   mu = NULL,
   cluster_method = c("single", "average", "complete", "ward", "DIANA"),
   meta_loss = c("MaxDiv", "ERC"),
+  UB = NULL,
+  LB = NULL,
   gamma = 0
 ) {
 
@@ -43,6 +47,33 @@ chiSigma <- function(
 
   n <- dim(sigma)[1]
   asset_names <- colnames(sigma)
+
+  # Fetch constraints
+  if (is.null(UB)) {
+    UB <- rep(1, n)
+  } else if (length(UB) == 1) {
+    # Check constraint
+    if (UB * n < 1) stop("Inconsistent constraint (increase UB)")
+    UB <- rep(UB, n)
+  } else {
+    # Check constraint
+    if (length(UB) != n) stop("Inconsistent contraint (incorrect elements in UB)")
+    UB <- UB
+  }
+  if (is.null(LB)) {
+    LB <- rep(0, n)
+  } else if (length(LB) == 1) {
+    # Check constraint
+    if (LB * n > 1) stop("Inconsistent constraint (decrease LB)")
+    LB <- rep(LB, n)
+  } else {
+    # Check constraint
+    if (length(LB) != n) stop("Inconsistent contraint (incorrect elements in LB)")
+    LB <- LB
+  }
+  # Check constraint
+  if (!all(pmax(UB, LB) == UB) || !all(pmin(UB, LB) == LB))
+    stop("Inconsistent constraint (UB smaller than LB)")
 
   cluster_object <- .get_clusters(sigma, cluster_method)
 
@@ -66,8 +97,11 @@ chiSigma <- function(
       mu_sub <- rep(0, max_cut)
     }
 
+    UB_sub <- drop(UB %*% t(S))
+    LB_sub <- drop(LB %*% t(S))
+
     Amat <- cbind(1, -diag(max_cut), diag(max_cut))
-    bvec <- c(1, -rep(1, max_cut), rep(0, max_cut))
+    bvec <- c(1, -UB_sub, LB_sub)
 
     opt <- quadprog::solve.QP(sigma_sub, mu_sub * gamma, Amat, bvec, meq = 1)
     w <- as.numeric(t(S_av) %*% opt$solution)

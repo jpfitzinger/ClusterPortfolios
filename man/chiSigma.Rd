@@ -9,6 +9,8 @@ chiSigma(
   mu = NULL,
   cluster_method = c("single", "average", "complete", "ward", "DIANA"),
   meta_loss = c("MaxDiv", "ERC"),
+  UB = NULL,
+  LB = NULL,
   gamma = 0
 )
 }
@@ -20,6 +22,10 @@ chiSigma(
 \item{cluster_method}{hierarchical cluster algorithm used to construct an asset hierarchy.}
 
 \item{meta_loss}{a loss function of the most diversified hierarchical allocation graph.}
+
+\item{UB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.}
+
+\item{LB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.}
 
 \item{gamma}{risk aversion parameter. Default: \code{gamma = 0}.}
 }

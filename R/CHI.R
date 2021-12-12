@@ -80,7 +80,7 @@ CHI <- function(
   if (!all(pmax(UB, LB) == UB) || !all(pmin(UB, LB) == LB))
     stop("Inconsistent constraint (UB smaller than LB)")
 
-  chi <- chiSigma(sigma, mu, cluster_method, meta_loss, gamma)
+  chi <- chiSigma(sigma, mu, cluster_method, meta_loss, UB, LB, gamma)
 
   w <- MV(chi$sigma, chi$mu, UB, LB, gamma)
 
