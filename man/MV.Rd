@@ -2,27 +2,32 @@
 % Please edit documentation in R/MV.R
 \name{MV}
 \alias{MV}
-\title{Minimum Variance}
+\title{Mean Variance}
 \usage{
-MV(sigma, UB = NULL, LB = NULL)
+MV(sigma, mu = NULL, UB = NULL, LB = NULL, gamma = 0)
 }
 \arguments{
 \item{sigma}{a \eqn{(N \times N)}{(N x N)} covariance matrix.}
 
+\item{mu}{a \eqn{(N \times 1)}{(N x 1)} vector of estimated returns.}
+
 \item{UB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.}
 
 \item{LB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.}
+
+\item{gamma}{risk aversion parameter. Default: \code{gamma = 0}.}
 }
 \value{
 A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 }
 \description{
-Computes a Minimum Variance portfolio with full investment and weight constraints.
+Computes a Mean Variance portfolio with full investment and weight constraints.
 }
 \details{
 The argument \code{sigma} is a covariance matrix.
 
-The MV solution is calculated using \code{quadprog}.
+The MV solution is calculated using \code{quadprog}. When \code{gamma} is left at the
+default setting, the minimum variance portfolio is computed.
 }
 \examples{
 # Load returns of assets or portfolios

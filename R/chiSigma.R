@@ -13,8 +13,10 @@
 #' The optimized hierarchy is used to filter \code{sigma}. If the filtered covariance matrix is used in a
 #' minimum variance portfolio optimizer, a CHI portfolio is constructed.
 #' @param sigma a \eqn{(N \times N)}{(N x N)} covariance matrix.
+#' @param mu a \eqn{(N \times 1)}{(N x 1)} vector of estimated returns.
 #' @param cluster_method hierarchical cluster algorithm used to construct an asset hierarchy.
 #' @param meta_loss a loss function of the most diversified hierarchical allocation graph.
+#' @param gamma risk aversion parameter. Default: \code{gamma = 0}.
 #' @return A \eqn{(N \times N)}{(N x N)} filtered covariance matrix.
 #' @author Johann Pfitzinger
 #' @references
@@ -30,8 +32,10 @@
 
 chiSigma <- function(
   sigma,
+  mu = NULL,
   cluster_method = c("single", "average", "complete", "ward", "DIANA"),
-  meta_loss = c("MaxDiv", "ERC")
+  meta_loss = c("MaxDiv", "ERC"),
+  gamma = 0
 ) {
 
   cluster_method <- match.arg(cluster_method)
@@ -56,10 +60,16 @@ chiSigma <- function(
     S_av <- sweep(S, 1, rowSums(S), "/")
     sigma_sub <- S_av %*% sigma %*% t(S_av)
 
+    if (!is.null(mu)) {
+      mu_sub <- drop(mu %*% t(S_av))
+    } else {
+      mu_sub <- rep(0, max_cut)
+    }
+
     Amat <- cbind(1, -diag(max_cut), diag(max_cut))
     bvec <- c(1, -rep(1, max_cut), rep(0, max_cut))
 
-    opt <- quadprog::solve.QP(sigma_sub, rep(0, max_cut), Amat, bvec, meq = 1)
+    opt <- quadprog::solve.QP(sigma_sub, mu_sub * gamma, Amat, bvec, meq = 1)
     w <- as.numeric(t(S_av) %*% opt$solution)
 
     sigma_ <- cbind(rbind(sigma, 1), c(rep(1, nrow(sigma)), 0))
@@ -81,7 +91,7 @@ chiSigma <- function(
   if (meta_loss == "MaxDiv") {
 
     w_bounds <- diag(n)
-    w_bounds[upper.tri(w_bounds)] <- 1
+    # w_bounds[upper.tri(w_bounds)] <- 1
 
     Amat <- cbind(sqrt(diag(sigma_meta)) / mean(sqrt(diag(sigma_meta))), 1 , -w_bounds, w_bounds)
     bvec <- c(1, 0.9999, rep(-0.99999, n), rep(0.00001, n))
@@ -125,7 +135,14 @@ chiSigma <- function(
   chiSigma_Mat <- t(rot_mat) %*% sigma %*% rot_mat
   diag(chiSigma_Mat) <- diag(chiSigma_Mat) + 1e-8
 
-  return(chiSigma_Mat)
+  out <- list(sigma = chiSigma_Mat)
+
+  if (!is.null(mu)) {
+    chiMu_Vec <- drop(mu %*% rot_mat)
+    out$mu <- chiMu_Vec
+  }
+
+  return(out)
 
 }
 

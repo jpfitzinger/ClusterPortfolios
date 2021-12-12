@@ -1,12 +1,15 @@
 #' @name MV
-#' @title Minimum Variance
-#' @description Computes a Minimum Variance portfolio with full investment and weight constraints.
+#' @title Mean Variance
+#' @description Computes a Mean Variance portfolio with full investment and weight constraints.
 #' @details The argument \code{sigma} is a covariance matrix.
 #'
-#' The MV solution is calculated using \code{quadprog}.
+#' The MV solution is calculated using \code{quadprog}. When \code{gamma} is left at the
+#' default setting, the minimum variance portfolio is computed.
 #' @param sigma a \eqn{(N \times N)}{(N x N)} covariance matrix.
+#' @param mu a \eqn{(N \times 1)}{(N x 1)} vector of estimated returns.
 #' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.
 #' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.
+#' @param gamma risk aversion parameter. Default: \code{gamma = 0}.
 #' @return A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 #' @author Johann Pfitzinger
 #' @references
@@ -22,12 +25,20 @@
 
 MV <- function(
   sigma,
+  mu = NULL,
   UB = NULL,
-  LB = NULL
+  LB = NULL,
+  gamma = 0
 ) {
 
   n <- dim(sigma)[1]
   asset_names <- colnames(sigma)
+
+  if (!is.null(mu)) {
+    if (length(mu)!=n) {
+      stop("Different dimensions implied by 'sigma' and 'mu'")
+    }
+  }
 
   # Fetch constraints
   if (is.null(UB)) {
@@ -66,8 +77,14 @@ MV <- function(
     Amat <- cbind(1, -diag(n), diag(n))
     bvec <- c(1, -UB, LB)
 
+    if (!is.null(mu)) {
+      dvec <- mu
+    } else {
+      dvec <- rep(0, n)
+    }
+
     # Optimization
-    opt <- quadprog::solve.QP(sigma, rep(0, n), Amat, bvec, meq = 1)
+    opt <- quadprog::solve.QP(sigma, dvec * gamma, Amat, bvec, meq = 1)
 
     opt_weights <- opt$solution
 
