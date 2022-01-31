@@ -119,17 +119,25 @@ chiSigma <- function(
   w_opt_lvl <- purrr::map(level_k, ~lvl_w(., sigma, cluster_object$cluster_object))
   w_mat <- sapply(w_opt_lvl, function(x) x$w)
 
+  # Drop levels with same weights
+  ix <- rep(T, ncol(w_mat))
+  for (i in 2:ncol(w_mat)) {
+    ix[i] <- !isTRUE(all.equal(w_mat[,i-1], w_mat[,i], tolerance = 1e-5))
+  }
+  w_mat <- w_mat[, ix]
+  n_meta <- ncol(w_mat)
+
   sigma_meta <- t(w_mat) %*% sigma %*% w_mat
-  diag(sigma_meta) <- diag(sigma_meta) + 1e-5
+  #diag(sigma_meta) <- diag(sigma_meta) + 1e-5
 
   if (meta_loss == "MaxDiv") {
 
-    w_bounds <- diag(n)
+    w_bounds <- diag(n_meta)
     # w_bounds[upper.tri(w_bounds)] <- 1
 
     Amat <- cbind(sqrt(diag(sigma_meta)) / mean(sqrt(diag(sigma_meta))), 1 , -w_bounds, w_bounds)
-    bvec <- c(1, 0.9999, rep(-0.99999, n), rep(0.00001, n))
-    dvec <- rep(0, n)
+    bvec <- c(1, 0.9999, rep(-0.99999, n_meta), rep(0.00001, n_meta))
+    dvec <- rep(0, n_meta)
 
     meta_opt <- quadprog::solve.QP(sigma_meta,
                                    dvec,
@@ -145,16 +153,16 @@ chiSigma <- function(
       w <- as.numeric(w_mat %*% w)
       sigmaw <- crossprod(sigma, w)
       pRC <- (w * sigmaw)/as.numeric(crossprod(w, sigmaw))
-      d <- sum((pRC - 1/n)^2)
+      d <- sum((pRC - 1/n_meta)^2)
       return(d)
     }
     .eqConstraint <- function (w)
     {
       return(sum(w) - 1)
     }
-    phi <- nloptr::slsqp(x0 = rep(1/n, n), fn = .pRC,
-                         heq = .eqConstraint, lower = rep(1e-5, n),
-                         upper = rep(1, n), nl.info = FALSE,
+    phi <- nloptr::slsqp(x0 = rep(1/n_meta, n_meta), fn = .pRC,
+                         heq = .eqConstraint, lower = rep(1e-5, n_meta),
+                         upper = rep(1, n_meta), nl.info = FALSE,
                          control = list(xtol_rel = 1e-18, check_derivatives = FALSE,
                                         maxeval = 20000),
                          sigma = sigma, w_mat = w_mat)$par
@@ -162,7 +170,7 @@ chiSigma <- function(
   }
 
   rot_mat <- lapply(w_opt_lvl, function(x) x$rotation)
-  rot_mat <- abind::abind(rot_mat, along = 3)
+  rot_mat <- abind::abind(rot_mat[ix], along = 3)
   rot_mat <- apply(rot_mat, 2, function(x) x %*% phi)
   rot_mat <- solve(rot_mat[1:n, 1:n])
 
