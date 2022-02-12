@@ -1,5 +1,5 @@
 Package: ClusterPortfolios
-Title: Portfolio Optimization based on statistical clustering techniques.
+Title: Portfolio Optimization based on statistical clustering techniques
 Version: 0.0.0.1
 Authors@R: 
     person(given = "Johann",
@@ -12,7 +12,8 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 LinkingTo: Rcpp, RcppArmadillo
 NeedsCompilation: yes
 ByteCompile: yes
+Imports: cluster, Rcpp, stats, quadprog, abind, Matrix, nloptr
