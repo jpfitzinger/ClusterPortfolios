@@ -4,15 +4,12 @@
 \alias{hSigma}
 \title{Hierarchical filtering of the covariance matrix}
 \usage{
-hSigma(
-  sigma,
-  cluster_method = c("single", "average", "complete", "ward", "DIANA")
-)
+hSigma(sigma, ...)
 }
 \arguments{
 \item{sigma}{a \eqn{(N \times N)}{(N x N)} covariance matrix.}
 
-\item{cluster_method}{hierarchical cluster algorithm used to construct an asset hierarchy.}
+\item{...}{arguments passed to \code{cluster::agnes} method.}
 }
 \value{
 A \eqn{(N \times N)}{(N x N)} filtered covariance matrix.

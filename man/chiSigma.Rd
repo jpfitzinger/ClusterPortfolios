@@ -2,24 +2,22 @@
 % Please edit documentation in R/chiSigma.R
 \name{chiSigma}
 \alias{chiSigma}
-\title{A convex hierarchical filter of the covariance matrix.}
+\title{A convex hierarchical filter of the covariance matrix}
 \usage{
 chiSigma(
   sigma,
   mu = NULL,
-  cluster_method = c("single", "average", "complete", "ward", "DIANA"),
   meta_loss = c("MaxDiv", "ERC"),
   UB = NULL,
   LB = NULL,
-  gamma = 0
+  gamma = 0,
+  ...
 )
 }
 \arguments{
 \item{sigma}{a \eqn{(N \times N)}{(N x N)} covariance matrix.}
 
 \item{mu}{a \eqn{(N \times 1)}{(N x 1)} vector of estimated returns.}
-
-\item{cluster_method}{hierarchical cluster algorithm used to construct an asset hierarchy.}
 
 \item{meta_loss}{a loss function of the most diversified hierarchical allocation graph.}
 
@@ -28,6 +26,8 @@ chiSigma(
 \item{LB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.}
 
 \item{gamma}{risk aversion parameter. Default: \code{gamma = 0}.}
+
+\item{...}{arguments passed to \code{cluster::agnes} method.}
 }
 \value{
 A \eqn{(N \times N)}{(N x N)} filtered covariance matrix.

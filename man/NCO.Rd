@@ -4,24 +4,18 @@
 \alias{NCO}
 \title{Nested Clusters Optimization}
 \usage{
-NCO(
-  sigma,
-  cluster_method = c("single", "average", "complete", "ward", "DIANA"),
-  UB = NULL,
-  LB = NULL,
-  n_clusters = "auto"
-)
+NCO(sigma, UB = NULL, LB = NULL, n_clusters = "auto", ...)
 }
 \arguments{
 \item{sigma}{a \eqn{(N \times N)}{(N x N)} covariance matrix.}
-
-\item{cluster_method}{hierarchical cluster algorithm used to construct an asset hierarchy.}
 
 \item{UB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.}
 
 \item{LB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.}
 
 \item{n_clusters}{trade-off between naive (0) or cluster-based (1) tree-splitting (see Details).}
+
+\item{...}{arguments passed to \code{cluster::agnes} method.}
 }
 \value{
 A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
