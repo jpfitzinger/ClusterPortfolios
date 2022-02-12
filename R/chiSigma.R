@@ -1,5 +1,5 @@
 #' @name chiSigma
-#' @title A convex hierarchical filter of the covariance matrix.
+#' @title A convex hierarchical filter of the covariance matrix
 #' @description Calculates covariance matrix filtered using the most diversified hierarchical graph.
 #' The hierarchical graph can be optimized using maximum diversification (MaxDiv) or equal risk contribution (ERC).
 #' @details The argument \code{sigma} is a covariance matrix.
@@ -14,11 +14,11 @@
 #' minimum variance portfolio optimizer, a CHI portfolio is constructed.
 #' @param sigma a \eqn{(N \times N)}{(N x N)} covariance matrix.
 #' @param mu a \eqn{(N \times 1)}{(N x 1)} vector of estimated returns.
-#' @param cluster_method hierarchical cluster algorithm used to construct an asset hierarchy.
 #' @param meta_loss a loss function of the most diversified hierarchical allocation graph.
 #' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.
 #' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.
 #' @param gamma risk aversion parameter. Default: \code{gamma = 0}.
+#' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times N)}{(N x N)} filtered covariance matrix.
 #' @author Johann Pfitzinger
 #' @references
@@ -30,19 +30,22 @@
 #' chiSigma(sigma)
 #'
 #' @export
+#'
+#' @importFrom abind abind
+#' @importFrom nloptr slsqp
+#' @importFrom Matrix bdiag
 
 
 chiSigma <- function(
   sigma,
   mu = NULL,
-  cluster_method = c("single", "average", "complete", "ward", "DIANA"),
   meta_loss = c("MaxDiv", "ERC"),
   UB = NULL,
   LB = NULL,
-  gamma = 0
+  gamma = 0,
+  ...
 ) {
 
-  cluster_method <- match.arg(cluster_method)
   meta_loss <- match.arg(meta_loss)
 
   n <- dim(sigma)[1]
@@ -75,7 +78,7 @@ chiSigma <- function(
   if (!all(pmax(UB, LB) == UB) || !all(pmin(UB, LB) == LB))
     stop("Inconsistent constraint (UB smaller than LB)")
 
-  cluster_object <- .get_clusters(sigma, cluster_method)
+  cluster_object <- .get_clusters(sigma, ...)
 
   lvl_w <- function(n_clusters, sigma, cluster_object) {
 
@@ -83,7 +86,7 @@ chiSigma <- function(
     max_cut <- max(cut)
 
     cut_fx <- function(rowSel,cut) as.data.frame(matrix(as.numeric(rowSel == cut), ncol = length(cut)))
-    S_Filler <- purrr::map(1:max_cut, ~cut_fx(., cut))
+    S_Filler <- lapply(1:max_cut, cut_fx, cut = cut)
     S = matrix(nrow = length(S_Filler), ncol = length(cut))
     # Can be improved with Rcpp if required.
     for(i in 1:length(S_Filler) ) S[i,] <- as.matrix(S_Filler[i][[1]])
@@ -116,7 +119,7 @@ chiSigma <- function(
   }
 
   level_k <- c(n:1)
-  w_opt_lvl <- purrr::map(level_k, ~lvl_w(., sigma, cluster_object$cluster_object))
+  w_opt_lvl <- lapply(level_k, lvl_w, sigma = sigma, cluster_object = cluster_object$cluster_object)
   w_mat <- sapply(w_opt_lvl, function(x) x$w)
 
   # Drop levels with same weights

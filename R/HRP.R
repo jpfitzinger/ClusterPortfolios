@@ -16,10 +16,10 @@
 #' optimal splitting location (i.e. split at the optimal location that is at
 #' most \eqn{tau\times x N/2}{tau x N/2} elements from the central split).
 #' @param sigma a \eqn{(N \times N)}{(N x N)} covariance matrix.
-#' @param cluster_method hierarchical cluster algorithm used to construct an asset hierarchy.
 #' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.
 #' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.
 #' @param tau trade-off between naive (0) or cluster-based (1) tree-splitting (see Details).
+#' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 #' @author Johann Pfitzinger
 #' @references
@@ -41,13 +41,11 @@
 
 HRP <- function(
   sigma,
-  cluster_method = c("single", "average", "complete", "ward", "DIANA"),
   UB = NULL,
   LB = NULL,
-  tau = 0
+  tau = 0,
+  ...
   ) {
-
-  cluster_method <- match.arg(cluster_method)
 
   n <- dim(sigma)[1]
   asset_names <- colnames(sigma)
@@ -80,7 +78,7 @@ HRP <- function(
     stop("Inconsistent constraint (UB smaller than LB)")
 
   # Create Hierarchy
-  S <- .compute_S_matrix(sigma, cluster_method = cluster_method, tau = tau)
+  S <- .compute_S_matrix(sigma, tau = tau, ...)
   P <- .compute_P_matrix(S)
 
   w <- rep(NA, nrow(S))
