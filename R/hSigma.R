@@ -9,7 +9,7 @@
 #' is used. Default is single-linkage agglomerative nesting.
 #'
 #' @param sigma a \eqn{(N \times N)}{(N x N)} covariance matrix.
-#' @param cluster_method hierarchical cluster algorithm used to construct an asset hierarchy.
+#' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times N)}{(N x N)} filtered covariance matrix.
 #' @author Johann Pfitzinger
 #' @references
@@ -27,25 +27,23 @@
 
 hSigma <- function(
   sigma,
-  cluster_method = c("single", "average", "complete", "ward", "DIANA")
+  ...
   ) {
-
-  cluster_method <- match.arg(cluster_method)
 
   n <- dim(sigma)[1]
   asset_names <- colnames(sigma)
 
   # Cluster
-  clust <- .get_clusters(sigma, cluster_method, 2)
+  clust <- .get_clusters(sigma, 2, ...)
   cut <- clust$clusters
   clust <- clust$cluster_object
 
   # Create S list
-  S <- purrr::map(1:n, function(k) {
+  S <- lapply(1:n, function(k) {
     cut <- cutree(clust, k)
     max_cut <- max(cut)
     cut_fx <- function(rowSel,cut) as.data.frame(matrix(as.numeric(rowSel == cut), ncol = length(cut)))
-    S_Filler <- purrr::map(1:max_cut, ~cut_fx(., cut))
+    S_Filler <- lapply(1:max_cut, cut_fx, cut = cut)
     S = matrix(nrow = length(S_Filler), ncol = length(cut))
     # Can be improved with Rcpp if required.
     for(i in 1:length(S_Filler) ) S[i,] <- as.matrix(S_Filler[i][[1]])

@@ -13,10 +13,10 @@
 #' NCO calculates within cluster and between cluster minimum variance portfolios.
 #' Constraints are implemented using an iterative convergence algorithm.
 #' @param sigma a \eqn{(N \times N)}{(N x N)} covariance matrix.
-#' @param cluster_method hierarchical cluster algorithm used to construct an asset hierarchy.
 #' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.
 #' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.
 #' @param n_clusters trade-off between naive (0) or cluster-based (1) tree-splitting (see Details).
+#' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 #' @author Johann Pfitzinger
 #' @references
@@ -35,13 +35,11 @@
 
 NCO <- function(
   sigma,
-  cluster_method = c("single", "average", "complete", "ward", "DIANA"),
   UB = NULL,
   LB = NULL,
-  n_clusters = "auto"
+  n_clusters = "auto",
+  ...
   ) {
-
-  cluster_method <- match.arg(cluster_method)
 
   n <- dim(sigma)[1]
   asset_names <- colnames(sigma)
@@ -79,13 +77,13 @@ NCO <- function(
   if (!all(pmax(UB, LB) == UB) || !all(pmin(UB, LB) == LB))
     stop("Inconsistent constraint (UB smaller than LB)")
 
-  clust <- .get_clusters(sigma, cluster_method, n_clusters = n_clusters)
+  clust <- .get_clusters(sigma, n_clusters = n_clusters, ...)
 
   cut <- clust$clusters
   max_cut <- max(cut)
 
   cut_fx <- function(rowSel,cut) as.data.frame(matrix(as.numeric(rowSel == cut), ncol = length(cut)))
-  S_Filler <- purrr::map(1:max_cut, ~cut_fx(., cut))
+  S_Filler <- lapply(1:max_cut, cut_fx, cut = cut)
   S = matrix(nrow = length(S_Filler), ncol = length(cut))
   for(i in 1:length(S_Filler) ) S[i,] <- as.matrix(S_Filler[i][[1]])
 
