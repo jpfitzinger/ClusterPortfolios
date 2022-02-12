@@ -1,28 +1,19 @@
-#' @importFrom cluster agnes
-#' @importFrom cluster diana
-#' @importFrom cluster clusGap
-#' @importFrom stats cov2cor
-#' @importFrom stats dist
-#' @importFrom stats cutree
+#' @importFrom cluster agnes silhouette
+#' @importFrom stats cov2cor dist cutree as.dist
 
-.cluster_object <- function(sigma, cluster_method) {
+.cluster_object <- function(sigma, ...) {
 
-  corr <- cov2cor(sigma)
-  #distmat <- ((1 - corr) / 2)^0.5
-  distmat <- dist(corr)
-  if (cluster_method == "DIANA") {
-    clust <- diana(as.dist(distmat))
-  } else {
-    clust <- agnes(as.dist(distmat), method = cluster_method)
-  }
+  corr <- stats::cov2cor(sigma)
+  distmat <- stats::dist(corr)
+  clust <- cluster::agnes(stats::as.dist(distmat), ...)
 
   return(clust)
 
 }
 
-.get_clusters <- function(sigma, cluster_method, n_clusters = NULL) {
+.get_clusters <- function(sigma, n_clusters = NULL, ...) {
 
-  clust <- .cluster_object(sigma, cluster_method)
+  clust <- .cluster_object(sigma, ...)
 
   if (is.null(n_clusters)) {
 
@@ -30,20 +21,19 @@
 
   } else if (n_clusters == "auto") {
 
-    if (cluster_method == "DIANA") {
-      warning("'DIANA' clustering currently not supported for automatic cluster selection. Changing cluster_method to 'complete'.")
-      cluster_method <- "complete"
-    }
     max_clusters <- ceiling(dim(sigma)[1] / 2)
-    corr <- cov2cor(sigma)
-    distmat <- ((1 - corr) / 2)^0.5
-    opt_clust_fx <- purrr::quietly(NbClust::NbClust)
-    opt <- opt_clust_fx(diss = as.dist(distmat), max.nc = max_clusters,
-                        method = cluster_method, index = "silhouette", distance = NULL)$result
-    opt_n_clusters <- opt$Best.nc[1]
-    clusters <- factoextra::hcut(as.dist(distmat), k = opt_n_clusters,
-                                 hc_func = "agnes",
-                                 hc_method = cluster_method, isdiss = T)$cluster
+    corr <- stats::cov2cor(sigma)
+    distmat <- stats::dist(corr)
+    clust <- .cluster_object(sigma, ...)
+
+    cluster_no <- c(2:max_clusters)
+
+    sil_widths <- sapply(cluster_no, function(k, clust, distmat) {
+      mean(cluster::silhouette(stats::cutree(clust, k = k), dist = distmat)[, 3])
+    }, clust = clust, dist = distmat)
+
+    opt_n_clusters <- cluster_no[which.max(sil_widths)]
+    clusters <- stats::cutree(clust, k = opt_n_clusters)
 
   } else if (is.integer(n_clusters) | is.numeric(n_clusters)) {
 
@@ -55,14 +45,14 @@
 
 }
 
-.compute_S_matrix <- function(sigma, cluster_method, tau) {
+.compute_S_matrix <- function(sigma, tau, ...) {
 
-  clust <- .get_clusters(sigma, cluster_method)
+  clust <- .get_clusters(sigma, ...)
 
   cluster_order <- clust$cluster_object$order
   cluster_height <- clust$cluster_object$height
 
-  bisect.inner <- function(cluster_order, cluster_height, tau, corr, sigma) {
+  bisect.inner <- function(cluster_order, cluster_height, tau, sigma) {
 
     N <- length(cluster_order)
     idx <- floor(N/2 - (N/2 - 1) * tau):floor(N/2 + (N/2 - 1) * tau)
@@ -77,14 +67,14 @@
 
     S.mat <<- cbind(S.mat, vec.1, vec.2)
 
-    if (length(x.vec.1) > 1) bisect.inner(cluster_order[x.vec.1], cluster_height[x.vec.1], tau, corr[x.vec.1, x.vec.1], sigma)
-    if (length(x.vec.2) > 1) bisect.inner(cluster_order[x.vec.2], cluster_height[x.vec.2], tau, corr[x.vec.2, x.vec.2], sigma)
+    if (length(x.vec.1) > 1) bisect.inner(cluster_order[x.vec.1], cluster_height[x.vec.1], tau, sigma)
+    if (length(x.vec.2) > 1) bisect.inner(cluster_order[x.vec.2], cluster_height[x.vec.2], tau, sigma)
 
   }
 
   S.mat <- c()
 
-  bisect.inner(cluster_order, cluster_height, tau, corr, sigma)
+  bisect.inner(cluster_order, cluster_height, tau, sigma)
 
   return(t(S.mat))
 
