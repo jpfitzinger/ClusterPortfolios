@@ -34,6 +34,7 @@
 #' @importFrom abind abind
 #' @importFrom nloptr slsqp
 #' @importFrom Matrix bdiag
+#' @importFrom MASS ginv
 
 
 chiSigma <- function(
@@ -175,7 +176,7 @@ chiSigma <- function(
   rot_mat <- lapply(w_opt_lvl, function(x) x$rotation)
   rot_mat <- abind::abind(rot_mat[ix], along = 3)
   rot_mat <- apply(rot_mat, 2, function(x) x %*% phi)
-  rot_mat <- solve(rot_mat[1:n, 1:n])
+  rot_mat <- MASS::ginv(rot_mat[1:n, 1:n])
 
   chiSigma_Mat <- t(rot_mat) %*% sigma %*% rot_mat
   diag(chiSigma_Mat) <- diag(chiSigma_Mat) + 1e-8
