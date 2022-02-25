@@ -11,6 +11,7 @@ CHI(
   UB = NULL,
   LB = NULL,
   gamma = 0,
+  max_tilt = 1,
   ...
 )
 }
@@ -26,6 +27,8 @@ CHI(
 \item{LB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.}
 
 \item{gamma}{risk aversion parameter. Default: \code{gamma = 0} returns the minimum variance portfolio.}
+
+\item{max_tilt}{maximum percentage reduction in the effective number of assets. Default: \code{max_tilt = 1} (no restriction).}
 
 \item{...}{arguments passed to \code{cluster::agnes} method.}
 }

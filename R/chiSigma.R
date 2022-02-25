@@ -18,6 +18,7 @@
 #' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.
 #' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.
 #' @param gamma risk aversion parameter. Default: \code{gamma = 0}.
+#' @param max_tilt maximum percentage reduction in the effective number of assets. Default: \code{max_tilt = 1} (no restriction).
 #' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times N)}{(N x N)} filtered covariance matrix.
 #' @author Johann Pfitzinger
@@ -44,6 +45,7 @@ chiSigma <- function(
   UB = NULL,
   LB = NULL,
   gamma = 0,
+  max_tilt = 1,
   ...
 ) {
 
@@ -126,28 +128,38 @@ chiSigma <- function(
   # Drop levels with same weights
   ix <- rep(T, ncol(w_mat))
   for (i in 2:ncol(w_mat)) {
-    ix[i] <- !isTRUE(all.equal(w_mat[,i-1], w_mat[,i], tolerance = 1e-5))
+    #ix[i] <- !isTRUE(all.equal(w_mat[,i-1], w_mat[,i], tolerance = 1e-8))
   }
   w_mat <- w_mat[, ix]
   n_meta <- ncol(w_mat)
 
   sigma_meta <- t(w_mat) %*% sigma %*% w_mat
-  #diag(sigma_meta) <- diag(sigma_meta) + 1e-5
 
   if (meta_loss == "MaxDiv") {
 
-    w_bounds <- diag(n_meta)
-    # w_bounds[upper.tri(w_bounds)] <- 1
+    .pRC <- function(w, w_mat, sigma) {
+      sigma_meta <- t(w_mat) %*% sigma %*% w_mat
 
-    Amat <- cbind(sqrt(diag(sigma_meta)) / mean(sqrt(diag(sigma_meta))), 1 , -w_bounds, w_bounds)
-    bvec <- c(1, 0.9999, rep(-0.99999, n_meta), rep(0.00001, n_meta))
-    dvec <- rep(0, n_meta)
-
-    meta_opt <- quadprog::solve.QP(sigma_meta,
-                                   dvec,
-                                   Amat, bvec, meq = 2)
-
-    phi <- meta_opt$solution / sum(meta_opt$solution)
+      sigmaw <- crossprod(sigma_meta, w)
+      pDR <- sqrt(as.numeric(crossprod(w, sigmaw))) / crossprod(w, sqrt(diag(sigma_meta)))
+      return(pDR)
+    }
+    .eqConstraint <- function (w)
+    {
+      return(sum(w) - 1)
+    }
+    .hinConstraint <- function(w)
+    {
+      return(crossprod(level_k[ix], w) - ((n-1)*(1-max_tilt)+1))
+    }
+    phi <- nloptr::slsqp(x0 = rep(1/n_meta, n_meta), fn = .pRC,
+                         heq = .eqConstraint,
+                         hin = .hinConstraint,
+                         lower = rep(1e-5, n_meta),
+                         upper = rep(1, n_meta), nl.info = FALSE,
+                         control = list(xtol_rel = 1e-18, check_derivatives = FALSE,
+                                        maxeval = 20000),
+                         sigma = sigma, w_mat = w_mat)$par
 
   }
 
@@ -164,8 +176,14 @@ chiSigma <- function(
     {
       return(sum(w) - 1)
     }
+    .hinConstraint <- function(w)
+    {
+      return(crossprod(level_k[ix], w) - ((n-1)*(1-max_tilt)+1))
+    }
     phi <- nloptr::slsqp(x0 = rep(1/n_meta, n_meta), fn = .pRC,
-                         heq = .eqConstraint, lower = rep(1e-5, n_meta),
+                         heq = .eqConstraint,
+                         hin = .hinConstraint,
+                         lower = rep(1e-5, n_meta),
                          upper = rep(1, n_meta), nl.info = FALSE,
                          control = list(xtol_rel = 1e-18, check_derivatives = FALSE,
                                         maxeval = 20000),

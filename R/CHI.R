@@ -17,6 +17,7 @@
 #' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.
 #' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.
 #' @param gamma risk aversion parameter. Default: \code{gamma = 0} returns the minimum variance portfolio.
+#' @param max_tilt maximum percentage reduction in the effective number of assets. Default: \code{max_tilt = 1} (no restriction).
 #' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 #' @author Johann Pfitzinger
@@ -38,6 +39,7 @@ CHI <- function(
   UB = NULL,
   LB = NULL,
   gamma = 0,
+  max_tilt = 1,
   ...
   ) {
 
@@ -79,7 +81,7 @@ CHI <- function(
   if (!all(pmax(UB, LB) == UB) || !all(pmin(UB, LB) == LB))
     stop("Inconsistent constraint (UB smaller than LB)")
 
-  chi <- chiSigma(sigma, mu, meta_loss, UB, LB, gamma, ...)
+  chi <- chiSigma(sigma, mu, meta_loss, UB, LB, gamma, max_tilt, ...)
 
   w <- MV(chi$sigma, chi$mu, UB, LB, gamma)
 
