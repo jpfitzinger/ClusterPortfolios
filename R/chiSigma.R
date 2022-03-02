@@ -36,6 +36,7 @@
 #' @importFrom nloptr slsqp
 #' @importFrom Matrix bdiag
 #' @importFrom MASS ginv
+#' @importFrom purrr quietly
 
 
 chiSigma <- function(
@@ -50,6 +51,7 @@ chiSigma <- function(
 ) {
 
   meta_loss <- match.arg(meta_loss)
+  quiet_slsqp <- purrr::quietly(nloptr::slsqp)
 
   n <- dim(sigma)[1]
   asset_names <- colnames(sigma)
@@ -137,11 +139,11 @@ chiSigma <- function(
 
   if (meta_loss == "MaxDiv") {
 
-    .pRC <- function(w, w_mat, sigma) {
-      sigma_meta <- t(w_mat) %*% sigma %*% w_mat
-
+    .pRC <- function(w, w_mat, sigma_meta, sigma) {
       sigmaw <- crossprod(sigma_meta, w)
-      pDR <- sqrt(as.numeric(crossprod(w, sigmaw))) / crossprod(w, sqrt(diag(sigma_meta)))
+      w_ <- drop(w_mat %*% w)
+      #pDR <- sqrt(as.numeric(crossprod(w, sigmaw))) / crossprod(w, sqrt(diag(sigma_meta)))
+      pDR <- as.numeric(-crossprod(w_, sqrt(diag(sigma)))) / sqrt(as.numeric(crossprod(w, sigmaw)))
       return(pDR)
     }
     .eqConstraint <- function (w)
@@ -152,14 +154,14 @@ chiSigma <- function(
     {
       return(crossprod(level_k[ix], w) - ((n-1)*(1-max_tilt)+1))
     }
-    phi <- nloptr::slsqp(x0 = rep(1/n_meta, n_meta), fn = .pRC,
+    phi <- quiet_slsqp(x0 = rep(1/n_meta, n_meta), fn = .pRC,
                          heq = .eqConstraint,
                          hin = .hinConstraint,
                          lower = rep(1e-5, n_meta),
                          upper = rep(1, n_meta), nl.info = FALSE,
                          control = list(xtol_rel = 1e-18, check_derivatives = FALSE,
                                         maxeval = 20000),
-                         sigma = sigma, w_mat = w_mat)$par
+                         sigma_meta = sigma_meta, w_mat = w_mat, sigma = sigma)$result$par
 
   }
 
@@ -180,14 +182,14 @@ chiSigma <- function(
     {
       return(crossprod(level_k[ix], w) - ((n-1)*(1-max_tilt)+1))
     }
-    phi <- nloptr::slsqp(x0 = rep(1/n_meta, n_meta), fn = .pRC,
+    phi <- quiet_slsqp(x0 = rep(1/n_meta, n_meta), fn = .pRC,
                          heq = .eqConstraint,
                          hin = .hinConstraint,
                          lower = rep(1e-5, n_meta),
                          upper = rep(1, n_meta), nl.info = FALSE,
                          control = list(xtol_rel = 1e-18, check_derivatives = FALSE,
                                         maxeval = 20000),
-                         sigma = sigma, w_mat = w_mat)$par
+                         sigma = sigma, w_mat = w_mat)$result$par
 
   }
 
@@ -205,6 +207,9 @@ chiSigma <- function(
     chiMu_Vec <- drop(mu %*% rot_mat)
     out$mu <- chiMu_Vec
   }
+
+  out$phi <- phi
+  out$w <- drop(w_mat %*% phi)
 
   return(out)
 
