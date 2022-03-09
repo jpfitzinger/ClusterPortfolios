@@ -13,9 +13,12 @@
 #' mean variance portfolio optimizer, a CHI portfolio is constructed.
 #' @param sigma a \eqn{(N \times N)}{(N x N)} covariance matrix.
 #' @param mu a \eqn{(N \times 1)}{(N x 1)} vector of estimated returns.
-#' @param meta_loss a loss function of the most diversified hierarchical allocation graph..
-#' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.
-#' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.
+#' @param meta_loss a loss function of the most diversified hierarchical allocation graph.
+#' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraints.
+#' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraints.
+#' @param groups vector of group IDs. The names of the vector must be identical to the asset names.
+#' @param group.UB scalar or \eqn{(N_groups\times 1)}{(N_groups x 1)} vector of upper bound group constraints.
+#' @param group.LB scalar or \eqn{(N_groups\times 1)}{(N_groups x 1)} vector of lower bound group constraints.
 #' @param gamma risk aversion parameter. Default: \code{gamma = 0} returns the minimum variance portfolio.
 #' @param max_tilt maximum percentage reduction in the effective number of assets. Default: \code{max_tilt = 1} (no restriction).
 #' @param ... arguments passed to \code{cluster::agnes} method.
@@ -38,6 +41,9 @@ CHI <- function(
   meta_loss = c("MaxDiv", "ERC"),
   UB = NULL,
   LB = NULL,
+  groups = NULL,
+  group.UB = NULL,
+  group.LB = NULL,
   gamma = 0,
   max_tilt = 1,
   ...
@@ -82,8 +88,8 @@ CHI <- function(
     stop("Inconsistent constraint (UB smaller than LB)")
 
   chi <- chiSigma(sigma, mu, meta_loss, UB, LB, gamma, max_tilt, ...)
-
-  w <- MV(chi$sigma, chi$mu, UB, LB, gamma)
+  w <- MV(sigma = chi$sigma, mu = chi$mu, UB = UB, LB = LB, gamma = gamma,
+          groups = groups, group.UB = group.UB, group.LB = group.LB)
 
   return(w)
 

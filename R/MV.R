@@ -9,6 +9,9 @@
 #' @param mu a \eqn{(N \times 1)}{(N x 1)} vector of estimated returns.
 #' @param UB scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.
 #' @param LB scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.
+#' @param groups vector of group IDs. The names of the vector must be identical to the asset names.
+#' @param group.UB scalar or \eqn{(N_groups\times 1)}{(N_groups x 1)} vector of upper bound group constraints.
+#' @param group.LB scalar or \eqn{(N_groups\times 1)}{(N_groups x 1)} vector of lower bound group constraints.
 #' @param gamma risk aversion parameter. Default: \code{gamma = 0}.
 #' @return A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 #' @author Johann Pfitzinger
@@ -28,6 +31,9 @@ MV <- function(
   mu = NULL,
   UB = NULL,
   LB = NULL,
+  groups = NULL,
+  group.UB = NULL,
+  group.LB = NULL,
   gamma = 0
 ) {
 
@@ -67,6 +73,56 @@ MV <- function(
   if (!all(pmax(UB, LB) == UB) || !all(pmin(UB, LB) == LB))
     stop("Inconsistent constraint (UB smaller than LB)")
 
+  if (!is.null(groups)) {
+
+    n_groups <- length(unique(groups))
+    if (length(groups) != n) stop("'groups' has incorrect number of elements")
+    if (!all(names(groups) %in% asset_names)) stop("group names must be identical to asset names")
+    groups <- groups[asset_names]
+
+    # Fetch constraints
+    if (is.null(group.UB)) {
+      group.UB <- rep(1, n_groups)
+      names(group.UB) <- unique(groups)
+    } else if (length(group.UB) == 1) {
+      # Check constraint
+      if (group.UB * n_groups < 1) stop("Inconsistent constraint (increase group.UB)")
+      group.UB <- rep(group.UB, n_groups)
+      names(group.UB) <- unique(groups)
+    } else {
+      # Check constraint
+      if (length(group.UB) != n_groups) stop("Inconsistent contraint (incorrect elements in group.UB)")
+      group.UB <- group.UB
+    }
+    if (is.null(group.LB)) {
+      group.LB <- rep(0, n_groups)
+      names(group.LB) <- unique(groups)
+    } else if (length(group.LB) == 1) {
+      # Check constraint
+      if (group.LB * n_groups > 1) stop("Inconsistent constraint (decrease group.LB)")
+      group.LB <- rep(group.LB, n_groups)
+      names(group.LB) <- unique(groups)
+    } else {
+      # Check constraint
+      if (length(group.LB) != n_groups) stop("Inconsistent contraint (incorrect elements in group.LB)")
+      group.LB <- group.LB
+    }
+
+    if (!all(groups %in% names(group.UB)) | !all(groups %in% names(group.LB)))
+      stop("Inconsistent constraint (missing group names in 'group.UB' or 'group.LB')")
+    group.UB <- group.UB[unique(groups)]
+    group.LB <- group.LB[unique(groups)]
+    if (!all(pmax(group.UB, group.LB) == group.UB) || !all(pmin(group.UB, group.LB) == group.LB))
+      stop("Inconsistent constraint (group.UB smaller than group.LB)")
+
+    groups_mat <- sapply(unique(groups), function(x) x==groups)
+    groups_mat <- cbind(-groups_mat, groups_mat)
+    group.UB <- -group.UB
+
+  } else {
+    groups_mat <- NULL
+  }
+
   if (all(dim(sigma) == 1)) {
 
     opt_weights <- 1
@@ -74,8 +130,8 @@ MV <- function(
   } else {
 
     # Constraints
-    Amat <- cbind(1, -diag(n), diag(n))
-    bvec <- c(1, -UB, LB)
+    Amat <- cbind(1, -diag(n), diag(n), groups_mat)
+    bvec <- c(1, -UB, LB, group.UB, group.LB)
 
     if (!is.null(mu)) {
       dvec <- mu

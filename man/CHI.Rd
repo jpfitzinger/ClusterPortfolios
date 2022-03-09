@@ -10,6 +10,9 @@ CHI(
   meta_loss = c("MaxDiv", "ERC"),
   UB = NULL,
   LB = NULL,
+  groups = NULL,
+  group.UB = NULL,
+  group.LB = NULL,
   gamma = 0,
   max_tilt = 1,
   ...
@@ -20,11 +23,17 @@ CHI(
 
 \item{mu}{a \eqn{(N \times 1)}{(N x 1)} vector of estimated returns.}
 
-\item{meta_loss}{a loss function of the most diversified hierarchical allocation graph..}
+\item{meta_loss}{a loss function of the most diversified hierarchical allocation graph.}
 
-\item{UB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraint.}
+\item{UB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of upper bound weight constraints.}
 
-\item{LB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraint.}
+\item{LB}{scalar or \eqn{(N\times 1)}{(N x 1)} vector of lower bound weight constraints.}
+
+\item{groups}{vector of group IDs. The names of the vector must be identical to the asset names.}
+
+\item{group.UB}{scalar or \eqn{(N_groups\times 1)}{(N_groups x 1)} vector of upper bound group constraints.}
+
+\item{group.LB}{scalar or \eqn{(N_groups\times 1)}{(N_groups x 1)} vector of lower bound group constraints.}
 
 \item{gamma}{risk aversion parameter. Default: \code{gamma = 0} returns the minimum variance portfolio.}
 
