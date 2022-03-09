@@ -200,11 +200,13 @@ chiSigma <- function(
 
   chiSigma_Mat <- t(rot_mat) %*% sigma %*% rot_mat
   diag(chiSigma_Mat) <- diag(chiSigma_Mat) + 1e-8
+  colnames(chiSigma_Mat) <- rownames(chiSigma_Mat) <- asset_names
 
   out <- list(sigma = chiSigma_Mat)
 
   if (!is.null(mu)) {
     chiMu_Vec <- drop(mu %*% rot_mat)
+    names(chiMu_Vec) <- asset_names
     out$mu <- chiMu_Vec
   }
 
