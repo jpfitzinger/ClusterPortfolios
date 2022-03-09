@@ -16,4 +16,4 @@ RoxygenNote: 7.1.2
 LinkingTo: Rcpp, RcppArmadillo
 NeedsCompilation: yes
 ByteCompile: yes
-Imports: cluster, Rcpp, stats, quadprog, abind, Matrix, nloptr, MASS
+Imports: cluster, Rcpp, stats, quadprog, abind, Matrix, nloptr, MASS, purrr
