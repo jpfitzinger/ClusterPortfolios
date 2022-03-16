@@ -104,3 +104,37 @@
   return(P)
 
 }
+
+.draw_dendro <- function(clust, w, heights, explained_variance,
+                         asset_names, df, max_leaf_size) {
+
+  w_sizes <- abs(w)/max(abs(w))
+  w_sizes <- w_sizes * max_leaf_size
+  w_col <- ifelse(sign(w)>=0, "darkblue", "firebrick")
+
+  n <- length(heights)
+  dend_heights <- cumsum(rev(heights))
+  clust$height <- dend_heights[-n]
+
+  dend <- stats::as.dendrogram(clust)
+  dend <- dendextend::set(dend, "labels", asset_names[clust$order])
+  dend <- dendextend::set(dend, "leaves_pch", 15)
+  dend <- dendextend::set(dend, "leaves_cex", w_sizes[clust$order])
+  dend <- dendextend::set(dend, "leaves_col", w_col[clust$order])
+
+  pal <- RColorBrewer::brewer.pal(9, "Blues")
+  pal <- c("#FFFFFF", pal)
+  cols <- rev(explained_variance)
+  cols <- pmax(c(cols[-n] - cols[-1], cols[n]), 0)
+  cols <- round(sqrt((cols - min(cols)) / (max(cols) - min(cols))) * (length(pal)-1)+1)
+
+  top_node <- dendextend::get_nodes_xy(dend)[1,]
+
+  graphics::plot(stats::as.dendrogram(dend), ylim=c(0, max(dend_heights)),
+                 panel.first=graphics::abline(h = dend_heights[dend_heights > 1e-4],
+                                              col="lightgrey", lwd=1, lty = "dashed"))
+  graphics::segments(x0 = top_node[1], y0 = top_node[2], y1 = dend_heights[n])
+  graphics::points(x = top_node[1], y = dend_heights[n], pch = 15)
+  #graphics::rect(n*1.015, c(0, dend_heights[-n]), n*1.03, dend_heights, col = pal[cols], lwd=0.1)
+
+}
