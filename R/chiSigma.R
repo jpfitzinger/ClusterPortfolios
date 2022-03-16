@@ -212,6 +212,8 @@ chiSigma <- function(
 
   out$phi <- phi
   out$w <- drop(w_mat %*% phi)
+  out$cluster_object <- cluster_object$cluster_object
+  out$n_assets_per_level <- level_k[ix]
 
   return(out)
 
