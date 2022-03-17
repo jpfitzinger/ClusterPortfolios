@@ -119,13 +119,16 @@ chiSigma <- function(
     sigma_sub_ <- cbind(rbind(sigma_sub, 1), c(rep(1, nrow(sigma_sub)), 0))
     rot_mat <- t(S_av_) %*% solve(sigma_sub_) %*% S_av_ %*% sigma_
 
-    return(list(w = w, rotation = rot_mat))
+    expl_variance <- sum(diag(sigma_sub) * rowSums(S)) / sum(diag(sigma))
+
+    return(list(w = w, rotation = rot_mat, expl_variance = expl_variance))
 
   }
 
   level_k <- c(n:1)
   w_opt_lvl <- lapply(level_k, lvl_w, sigma = sigma, cluster_object = cluster_object$cluster_object)
   w_mat <- sapply(w_opt_lvl, function(x) x$w)
+  expl_var <- sapply(w_opt_lvl, function(x) x$expl_variance)
 
   # Drop levels with same weights
   ix <- rep(T, ncol(w_mat))
@@ -214,6 +217,7 @@ chiSigma <- function(
   out$w <- drop(w_mat %*% phi)
   out$cluster_object <- cluster_object$cluster_object
   out$n_assets_per_level <- level_k[ix]
+  out$expl_var <- expl_var[ix]
 
   return(out)
 

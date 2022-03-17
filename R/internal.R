@@ -135,6 +135,6 @@
                                               col="lightgrey", lwd=1, lty = "dashed"))
   graphics::segments(x0 = top_node[1], y0 = top_node[2], y1 = dend_heights[n])
   graphics::points(x = top_node[1], y = dend_heights[n], pch = 15)
-  #graphics::rect(n*1.015, c(0, dend_heights[-n]), n*1.03, dend_heights, col = pal[cols], lwd=0.1)
+  graphics::rect(n*1.015, c(0, dend_heights[-n]), n*1.03, dend_heights, col = pal[cols], lwd=0.1)
 
 }

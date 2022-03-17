@@ -79,17 +79,9 @@ chiPlot <- function(
 
   heights <- theta * dof
 
-  expl_variance <- rep(NA, length(dof))
-  #expl_variance[included_levels] <- x$hgraph$explained_variance
-  for (i in length(expl_variance):1) {
-    if (is.na(expl_variance[i])) {
-      if (i==length(expl_variance)) {
-        expl_variance[i] <- 0
-      } else {
-        expl_variance[i] <- expl_variance[i+1]
-      }
-    }
-  }
+  expl_variance <- rev(chi$expl_var)
+  #expl_variance <- c(diff(expl_variance), 0)
+
 
   .draw_dendro(clust, w, heights, expl_variance, asset_names, x$df,
                max_leaf_size)
