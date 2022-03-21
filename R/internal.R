@@ -106,7 +106,7 @@
 }
 
 .draw_dendro <- function(clust, w, heights, explained_variance,
-                         asset_names, df, max_leaf_size) {
+                         asset_names, df, max_leaf_size, ymax) {
 
   w_sizes <- abs(w)/max(abs(w))
   w_sizes <- w_sizes * max_leaf_size
@@ -130,7 +130,7 @@
 
   top_node <- dendextend::get_nodes_xy(dend)[1,]
 
-  graphics::plot(stats::as.dendrogram(dend), ylim=c(0, max(dend_heights)),
+  graphics::plot(stats::as.dendrogram(dend), ylim=c(0, ifelse(is.null(ymax), max(dend_heights), ymax)),
                  panel.first=graphics::abline(h = dend_heights[dend_heights > 1e-4],
                                               col="lightgrey", lwd=1, lty = "dashed"))
   graphics::segments(x0 = top_node[1], y0 = top_node[2], y1 = dend_heights[n])
