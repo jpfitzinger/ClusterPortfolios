@@ -1,5 +1,6 @@
 #' @importFrom cluster agnes silhouette
 #' @importFrom stats cov2cor dist cutree as.dist
+#' @importFrom dendextend plot_horiz.dendrogram
 
 .cluster_object <- function(sigma, ...) {
 
@@ -106,7 +107,7 @@
 }
 
 .draw_dendro <- function(clust, w, heights, explained_variance,
-                         asset_names, df, max_leaf_size, ymax) {
+                         asset_names, df, max_leaf_size, ymax, horiz) {
 
   w_sizes <- abs(w)/max(abs(w))
   w_sizes <- w_sizes * max_leaf_size
@@ -130,11 +131,21 @@
 
   top_node <- dendextend::get_nodes_xy(dend)[1,]
 
-  graphics::plot(stats::as.dendrogram(dend), ylim=c(0, ifelse(is.null(ymax), max(dend_heights), ymax)),
-                 panel.first=graphics::abline(h = dend_heights[dend_heights > 1e-4],
-                                              col="lightgrey", lwd=1, lty = "dashed"))
-  graphics::segments(x0 = top_node[1], y0 = top_node[2], y1 = dend_heights[n])
-  graphics::points(x = top_node[1], y = dend_heights[n], pch = 15)
-  graphics::rect(n*1.015, c(0, dend_heights[-n]), n*1.03, dend_heights, col = pal[cols], lwd=0.1)
+  if (horiz) {
+    dendextend::plot_horiz.dendrogram(rev(stats::as.dendrogram(dend)), xlim=c(0, ifelse(is.null(ymax), max(dend_heights), ymax)),
+                                      panel.first=graphics::abline(v = dend_heights[dend_heights > 1e-4],
+                                                                   col="lightgrey", lwd=1, lty = "dashed"), side = F, leaflab = "n",
+                                      axes = F)
+    graphics::segments(y0 = top_node[1], x0 = top_node[2], x1 = dend_heights[n])
+    graphics::points(y = top_node[1], x = dend_heights[n], pch = 15)
+    # graphics::rect(ytop = n*1.015, xleft = c(0, dend_heights[-n]), ybottom = n*1.03, xright = dend_heights, col = pal[cols], lwd=0.1)
+  } else {
+    graphics::plot(stats::as.dendrogram(dend), ylim=c(0, ifelse(is.null(ymax), max(dend_heights), ymax)),
+                   panel.first=graphics::abline(h = dend_heights[dend_heights > 1e-4],
+                                                col="lightgrey", lwd=1, lty = "dashed"))
+    graphics::segments(x0 = top_node[1], y0 = top_node[2], y1 = dend_heights[n])
+    graphics::points(x = top_node[1], y = dend_heights[n], pch = 15)
+    graphics::rect(n*1.015, c(0, dend_heights[-n]), n*1.03, dend_heights, col = pal[cols], lwd=0.1)
+  }
 
 }

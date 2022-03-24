@@ -26,6 +26,7 @@
 #' @param max_tilt maximum percentage reduction in the effective number of assets. Default: \code{max_tilt = 1} (no restriction).
 #' @param max_leaf_size maximum size of the leaf nodes. Default is \code{max_leaf_size=3}.
 #' @param ymax upper limit for y axis
+#' @param horiz rotate the dendrogram
 #' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A plotted dendrogram.
 #' @author Johann Pfitzinger
@@ -54,6 +55,7 @@ chiPlot <- function(
   max_tilt = 1,
   max_leaf_size = 3,
   ymax = NULL,
+  horiz = FALSE,
   ...
 ) {
 
@@ -86,6 +88,6 @@ chiPlot <- function(
 
 
   .draw_dendro(clust, w, heights, expl_variance, asset_names, x$df,
-               max_leaf_size, ymax)
+               max_leaf_size, ymax, horiz)
 
 }
