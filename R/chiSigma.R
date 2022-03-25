@@ -108,8 +108,11 @@ chiSigma <- function(
     UB_sub <- drop(UB %*% t(S))
     LB_sub <- drop(LB %*% t(S))
 
-    Amat <- cbind(1, -diag(max_cut), diag(max_cut))
-    bvec <- c(1, -UB_sub, LB_sub)
+    # Amat <- cbind(1, -diag(max_cut), diag(max_cut))
+    # bvec <- c(1, -UB_sub, LB_sub)
+
+    Amat <- matrix(1, nrow = max_cut)
+    bvec <- 1
 
     opt <- quadprog::solve.QP(sigma_sub, mu_sub * gamma, Amat, bvec, meq = 1)
     w <- as.numeric(t(S_av) %*% opt$solution)
@@ -145,7 +148,7 @@ chiSigma <- function(
     .pRC <- function(w, w_mat, sigma_meta, sigma) {
       sigmaw <- crossprod(sigma_meta, w)
       w_ <- drop(w_mat %*% w)
-      #pDR <- sqrt(as.numeric(crossprod(w, sigmaw))) / crossprod(w, sqrt(diag(sigma_meta)))
+      # pDR <- sqrt(as.numeric(crossprod(w, sigmaw))) / crossprod(w, sqrt(diag(sigma_meta)))
       pDR <- as.numeric(-crossprod(w_, sqrt(diag(sigma)))) / sqrt(as.numeric(crossprod(w, sigmaw)))
       return(pDR)
     }
@@ -160,10 +163,10 @@ chiSigma <- function(
     phi <- quiet_slsqp(x0 = rep(1/n_meta, n_meta), fn = .pRC,
                          heq = .eqConstraint,
                          hin = .hinConstraint,
-                         lower = rep(1e-5, n_meta),
+                         lower = c(1/n_meta, rep(1e-8, n_meta-1)),
                          upper = rep(1, n_meta), nl.info = FALSE,
-                         control = list(xtol_rel = 1e-18, check_derivatives = FALSE,
-                                        maxeval = 20000),
+                         control = list(xtol_rel = 1e-6, check_derivatives = T,
+                                        maxeval = 1000),
                          sigma_meta = sigma_meta, w_mat = w_mat, sigma = sigma)$result$par
 
   }
@@ -188,10 +191,10 @@ chiSigma <- function(
     phi <- quiet_slsqp(x0 = rep(1/n_meta, n_meta), fn = .pRC,
                          heq = .eqConstraint,
                          hin = .hinConstraint,
-                         lower = rep(1e-5, n_meta),
+                         lower = c(1/n_meta, rep(1e-8, n_meta-1)),
                          upper = rep(1, n_meta), nl.info = FALSE,
-                         control = list(xtol_rel = 1e-18, check_derivatives = FALSE,
-                                        maxeval = 20000),
+                         control = list(xtol_rel = 1e-6, check_derivatives = T,
+                                        maxeval = 1000),
                          sigma = sigma, w_mat = w_mat)$result$par
 
   }
