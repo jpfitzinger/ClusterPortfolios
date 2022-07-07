@@ -111,8 +111,8 @@ chiSigma <- function(
     # Amat <- cbind(1, -diag(max_cut), diag(max_cut))
     # bvec <- c(1, -UB_sub, LB_sub)
 
-    Amat <- matrix(1, nrow = max_cut)
-    bvec <- 1
+    Amat <- cbind(1, -diag(max_cut), diag(max_cut))
+    bvec <- c(1, -rep(1, max_cut), rep(0, max_cut))
 
     opt <- quadprog::solve.QP(sigma_sub, mu_sub * gamma, Amat, bvec, meq = 1)
     w <- as.numeric(t(S_av) %*% opt$solution)
@@ -164,6 +164,7 @@ chiSigma <- function(
                          heq = .eqConstraint,
                          hin = .hinConstraint,
                          lower = c(1/n_meta, rep(1e-8, n_meta-1)),
+                         #lower = rep(0, n_meta),
                          upper = rep(1, n_meta), nl.info = FALSE,
                          control = list(xtol_rel = 1e-6, check_derivatives = T,
                                         maxeval = 1000),
@@ -192,8 +193,9 @@ chiSigma <- function(
                          heq = .eqConstraint,
                          hin = .hinConstraint,
                          lower = c(1/n_meta, rep(1e-8, n_meta-1)),
+                         #lower = rep(0, n_meta),
                          upper = rep(1, n_meta), nl.info = FALSE,
-                         control = list(xtol_rel = 1e-6, check_derivatives = T,
+                         control = list(xtol_rel = 1e-6, xtol_abs = 1e-6, check_derivatives = F,
                                         maxeval = 1000),
                          sigma = sigma, w_mat = w_mat)$result$par
 
@@ -218,6 +220,7 @@ chiSigma <- function(
 
   out$phi <- phi
   out$w <- drop(w_mat %*% phi)
+  out$rotation <- rot_mat
   out$cluster_object <- cluster_object$cluster_object
   out$n_assets_per_level <- level_k[ix]
   out$expl_var <- expl_var[ix]
