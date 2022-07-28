@@ -50,6 +50,8 @@ chiSigma <- function(
   ...
 ) {
 
+  mu <- NULL
+
   meta_loss <- match.arg(meta_loss)
   quiet_slsqp <- purrr::quietly(nloptr::slsqp)
 
@@ -114,7 +116,21 @@ chiSigma <- function(
     Amat <- cbind(1, -diag(max_cut), diag(max_cut))
     bvec <- c(1, -rep(1, max_cut), rep(0, max_cut))
 
-    opt <- quadprog::solve.QP(sigma_sub, mu_sub * gamma, Amat, bvec, meq = 1)
+    # # With return target
+    safeOpt <- purrr::safely(quadprog::solve.QP)
+    Amat <- cbind(1, -mu_sub, -diag(max_cut), diag(max_cut))
+    bvec <- c(1, -gamma, -rep(1, max_cut), rep(0, max_cut))
+    opt_UB <- safeOpt(sigma_sub, mu_sub, Amat, bvec, meq = 1)
+    Amat <- cbind(1, mu_sub, -diag(max_cut), diag(max_cut))
+    bvec <- c(1, gamma, -rep(1, max_cut), rep(0, max_cut))
+    opt_LB <- safeOpt(sigma_sub, -mu_sub, Amat, bvec, meq = 1)
+    if (!is.null(opt_UB$result)) {
+      opt <- opt_UB$result
+    } else {
+      opt <- opt_LB$result
+    }
+
+    # opt <- quadprog::solve.QP(sigma_sub, mu_sub * gamma, Amat, bvec, meq = 1)
     w <- as.numeric(t(S_av) %*% opt$solution)
 
     sigma_ <- cbind(rbind(sigma, 1), c(rep(1, nrow(sigma)), 0))
@@ -124,7 +140,7 @@ chiSigma <- function(
 
     expl_variance <- sum(diag(sigma_sub) * rowSums(S)) / sum(diag(sigma))
 
-    return(list(w = w, rotation = rot_mat, expl_variance = expl_variance))
+    return(list(w = w, rotation = rot_mat, expl_variance = expl_variance, S = S_av))
 
   }
 
@@ -213,7 +229,8 @@ chiSigma <- function(
   out <- list(sigma = chiSigma_Mat)
 
   if (!is.null(mu)) {
-    chiMu_Vec <- drop(mu %*% rot_mat)
+    #chiMu_Vec <- drop(mu %*% rot_mat)
+    chiMu_Vec <- mu
     names(chiMu_Vec) <- asset_names
     out$mu <- chiMu_Vec
   }
@@ -224,6 +241,7 @@ chiSigma <- function(
   out$cluster_object <- cluster_object$cluster_object
   out$n_assets_per_level <- level_k[ix]
   out$expl_var <- expl_var[ix]
+  out$level_results <- w_opt_lvl
 
   return(out)
 

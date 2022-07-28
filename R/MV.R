@@ -139,8 +139,23 @@ MV <- function(
       dvec <- rep(0, n)
     }
 
+    # With return target
+    safeOpt <- purrr::safely(quadprog::solve.QP)
+    Amat <- cbind(1, -dvec, -diag(n), diag(n), groups_mat)
+    bvec <- c(1, -gamma, -UB, LB, group.UB, group.LB)
+    opt_UB <- safeOpt(sigma, dvec, Amat, bvec, meq = 1)
+    Amat <- cbind(1, dvec, -diag(n), diag(n), groups_mat)
+    bvec <- c(1, gamma, -UB, LB, group.UB, group.LB)
+    opt_LB <- safeOpt(sigma, -dvec, Amat, bvec, meq = 1)
+    if (!is.null(opt_UB$result)) {
+      opt <- opt_UB$result
+    } else {
+      opt <- opt_LB$result
+    }
+
+
     # Optimization
-    opt <- quadprog::solve.QP(sigma, dvec * gamma, Amat, bvec, meq = 1)
+    # opt <- quadprog::solve.QP(sigma, dvec * gamma, Amat, bvec, meq = 1)
 
     opt_weights <- opt$solution
 

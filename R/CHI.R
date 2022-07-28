@@ -1,6 +1,6 @@
 #' @name CHI
 #' @title Convex Hierarchical Portfolio
-#' @description Computes the optimal CHI-MVO portfolio with full investment and weight constraints.
+#' @description Computes the optimal CHI-MVO portfolio with full investment, weight and group constraints.
 #' @details The argument \code{sigma} is a covariance matrix.
 #'
 #' Hierarchical clustering is performed using the \code{cluster}-package. If
@@ -88,8 +88,11 @@ CHI <- function(
     stop("Inconsistent constraint (UB smaller than LB)")
 
   chi <- chiSigma(sigma, mu, meta_loss, UB, LB, gamma, max_tilt, ...)
-  w <- MV(sigma = chi$sigma, mu = chi$mu, UB = UB, LB = LB, gamma = gamma,
+  # w <- MV(sigma = chi$sigma, mu = chi$mu, UB = UB, LB = LB, gamma = gamma,
+  #         groups = groups, group.UB = group.UB, group.LB = group.LB)
+  w <- MV(sigma = chi$sigma, mu = mu, UB = UB, LB = LB, gamma = gamma,
           groups = groups, group.UB = group.UB, group.LB = group.LB)
+  # w <- chi$w
 
   return(w)
 
