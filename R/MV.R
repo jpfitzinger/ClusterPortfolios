@@ -129,33 +129,33 @@ MV <- function(
 
   } else {
 
-    # Constraints
-    Amat <- cbind(1, -diag(n), diag(n), groups_mat)
-    bvec <- c(1, -UB, LB, group.UB, group.LB)
-
     if (!is.null(mu)) {
       dvec <- mu
     } else {
       dvec <- rep(0, n)
     }
 
-    # With return target
-    safeOpt <- purrr::safely(quadprog::solve.QP)
-    Amat <- cbind(1, -dvec, -diag(n), diag(n), groups_mat)
-    bvec <- c(1, -gamma, -UB, LB, group.UB, group.LB)
-    opt_UB <- safeOpt(sigma, dvec, Amat, bvec, meq = 1)
-    Amat <- cbind(1, dvec, -diag(n), diag(n), groups_mat)
-    bvec <- c(1, gamma, -UB, LB, group.UB, group.LB)
-    opt_LB <- safeOpt(sigma, -dvec, Amat, bvec, meq = 1)
-    if (!is.null(opt_UB$result)) {
-      opt <- opt_UB$result
+    if (gamma != 0) {
+      # With return target
+      safeOpt <- purrr::safely(quadprog::solve.QP)
+      Amat <- cbind(1, -dvec, -diag(n), diag(n), groups_mat)
+      bvec <- c(1, -gamma, -UB, LB, group.UB, group.LB)
+      opt_UB <- safeOpt(sigma, dvec * 0.1, Amat, bvec, meq = 1)
+      Amat <- cbind(1, dvec, -diag(n), diag(n), groups_mat)
+      bvec <- c(1, gamma, -UB, LB, group.UB, group.LB)
+      opt_LB <- safeOpt(sigma, -dvec * 0.1, Amat, bvec, meq = 1)
+      if (!is.null(opt_UB$result)) {
+        opt <- opt_UB$result
+      } else {
+        opt <- opt_LB$result
+      }
     } else {
-      opt <- opt_LB$result
+      # Constraints
+      Amat <- cbind(1, -diag(n), diag(n), groups_mat)
+      bvec <- c(1, -UB, LB, group.UB, group.LB)
+      # Optimization
+      opt <- quadprog::solve.QP(sigma, dvec * gamma, Amat, bvec, meq = 1)
     }
-
-
-    # Optimization
-    # opt <- quadprog::solve.QP(sigma, dvec * gamma, Amat, bvec, meq = 1)
 
     opt_weights <- opt$solution
 
