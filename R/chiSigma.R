@@ -118,11 +118,15 @@ chiSigma <- function(
 
     # # With return target
     safeOpt <- purrr::safely(quadprog::solve.QP)
-    Amat <- cbind(1, -mu_sub, -diag(max_cut), diag(max_cut))
-    bvec <- c(1, -gamma, -rep(1, max_cut), rep(0, max_cut))
+    # Amat <- cbind(1, -mu_sub, -diag(max_cut), diag(max_cut))
+    # bvec <- c(1, -gamma, -rep(1, max_cut), rep(0, max_cut))
+    Amat <- cbind(1, -mu_sub)
+    bvec <- c(1, -gamma)
     opt_UB <- safeOpt(sigma_sub, mu_sub, Amat, bvec, meq = 1)
-    Amat <- cbind(1, mu_sub, -diag(max_cut), diag(max_cut))
-    bvec <- c(1, gamma, -rep(1, max_cut), rep(0, max_cut))
+    # Amat <- cbind(1, mu_sub, -diag(max_cut), diag(max_cut))
+    # bvec <- c(1, gamma, -rep(1, max_cut), rep(0, max_cut))
+    Amat <- cbind(1, mu_sub)
+    bvec <- c(1, gamma)
     opt_LB <- safeOpt(sigma_sub, -mu_sub, Amat, bvec, meq = 1)
     if (!is.null(opt_UB$result)) {
       opt <- opt_UB$result
@@ -136,7 +140,8 @@ chiSigma <- function(
     sigma_ <- cbind(rbind(sigma, 1), c(rep(1, nrow(sigma)), 0))
     S_av_ <- as.matrix(Matrix::bdiag(S_av, 1))
     sigma_sub_ <- cbind(rbind(sigma_sub, 1), c(rep(1, nrow(sigma_sub)), 0))
-    rot_mat <- t(S_av_) %*% solve(sigma_sub_) %*% S_av_ %*% sigma_
+    # rot_mat <- t(S_av_) %*% solve(sigma_sub_) %*% S_av_ %*% sigma_
+    rot_mat <- t(S_av) %*% solve(sigma_sub) %*% S_av %*% sigma
 
     expl_variance <- sum(diag(sigma_sub) * rowSums(S)) / sum(diag(sigma))
 
