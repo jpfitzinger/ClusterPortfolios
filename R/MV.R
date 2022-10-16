@@ -140,10 +140,10 @@ MV <- function(
       safeOpt <- purrr::safely(quadprog::solve.QP)
       Amat <- cbind(1, -dvec, -diag(n), diag(n), groups_mat)
       bvec <- c(1, -gamma, -UB, LB, group.UB, group.LB)
-      opt_UB <- safeOpt(sigma, dvec * 0.1, Amat, bvec, meq = 1)
+      opt_UB <- safeOpt(sigma, dvec, Amat, bvec, meq = 1)
       Amat <- cbind(1, dvec, -diag(n), diag(n), groups_mat)
       bvec <- c(1, gamma, -UB, LB, group.UB, group.LB)
-      opt_LB <- safeOpt(sigma, -dvec * 0.1, Amat, bvec, meq = 1)
+      opt_LB <- safeOpt(sigma, -dvec, Amat, bvec, meq = 1)
       if (!is.null(opt_UB$result)) {
         opt <- opt_UB$result
       } else {
