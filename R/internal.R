@@ -129,9 +129,10 @@
   cols <- pmax(c(cols[-n] - cols[-1], cols[n]), 0)
   cols <- round(sqrt((cols - min(cols)) / (max(cols) - min(cols))) * (length(pal)-1)+1)
 
-  top_node <- dendextend::get_nodes_xy(dend)[1,]
+
 
   if (horiz) {
+    top_node <- dendextend::get_nodes_xy(rev(dend))[1,]
     dendextend::plot_horiz.dendrogram(rev(stats::as.dendrogram(dend)), xlim=c(0, ifelse(is.null(ymax), max(dend_heights), ymax)),
                                       panel.first=graphics::abline(v = dend_heights[dend_heights > 1e-4],
                                                                    col="lightgrey", lwd=1, lty = "dashed"), side = F, leaflab = "n",
@@ -140,6 +141,7 @@
     graphics::points(y = top_node[1], x = dend_heights[n], pch = 15)
     # graphics::rect(ytop = n*1.015, xleft = c(0, dend_heights[-n]), ybottom = n*1.03, xright = dend_heights, col = pal[cols], lwd=0.1)
   } else {
+    top_node <- dendextend::get_nodes_xy(dend)[1,]
     graphics::plot(stats::as.dendrogram(dend), ylim=c(0, ifelse(is.null(ymax), max(dend_heights), ymax)),
                    panel.first=graphics::abline(h = dend_heights[dend_heights > 1e-4],
                                                 col="lightgrey", lwd=1, lty = "dashed"))
