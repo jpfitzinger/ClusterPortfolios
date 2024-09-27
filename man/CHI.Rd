@@ -15,6 +15,8 @@ CHI(
   group.LB = NULL,
   gamma = 0,
   max_tilt = 1,
+  groups_mat = NULL,
+  verbose = F,
   ...
 )
 }
@@ -39,13 +41,17 @@ CHI(
 
 \item{max_tilt}{maximum percentage reduction in the effective number of assets. Default: \code{max_tilt = 1} (no restriction).}
 
+\item{groups_mat}{Group constraints passed to MV.}
+
+\item{verbose}{Set to FALSE by default. If True, it returns the weights vector and the covariance matrix.}
+
 \item{...}{arguments passed to \code{cluster::agnes} method.}
 }
 \value{
 A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 }
 \description{
-Computes the optimal CHI-MVO portfolio with full investment and weight constraints.
+Computes the optimal CHI-MVO portfolio with full investment, weight and group constraints.
 }
 \details{
 The argument \code{sigma} is a covariance matrix.
@@ -65,9 +71,6 @@ data("Industry_10")
 rets <- Industry_10
 sigma <- cov(rets)
 CHI(sigma, UB = 0.15)
-
-}
-\references{
 
 }
 \author{

@@ -15,8 +15,6 @@
 #' @param gamma risk aversion parameter. Default: \code{gamma = 0}.
 #' @return A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 #' @author Johann Pfitzinger
-#' @references
-#'
 #' @examples
 #' # Load returns of assets or portfolios
 #' data("Industry_10")
@@ -27,14 +25,15 @@
 #' @export
 
 MV <- function(
-  sigma,
-  mu = NULL,
-  UB = NULL,
-  LB = NULL,
-  groups = NULL,
-  group.UB = NULL,
-  group.LB = NULL,
-  gamma = 0
+    sigma,
+    mu = NULL,
+    UB = NULL,
+    LB = NULL,
+    groups = NULL,
+    group.UB = NULL,
+    group.LB = NULL,
+    groups_mat = NULL,
+    gamma = 0
 ) {
 
   n <- dim(sigma)[1]
@@ -76,9 +75,7 @@ MV <- function(
   if (!is.null(groups)) {
 
     n_groups <- length(unique(groups))
-    if (length(groups) != n) stop("'groups' has incorrect number of elements")
     if (!all(names(groups) %in% asset_names)) stop("group names must be identical to asset names")
-    groups <- groups[asset_names]
 
     # Fetch constraints
     if (is.null(group.UB)) {
@@ -108,16 +105,27 @@ MV <- function(
       group.LB <- group.LB
     }
 
-    if (!all(groups %in% names(group.UB)) | !all(groups %in% names(group.LB)))
+    if (!all(groups %in% names(group.UB)) | !all( paste0( "LB_", groups) %in% names(group.LB) ))
       stop("Inconsistent constraint (missing group names in 'group.UB' or 'group.LB')")
-    group.UB <- group.UB[unique(groups)]
-    group.LB <- group.LB[unique(groups)]
+
+    # Reordering messes with Amat later. remove:
+    # group.UB <- group.UB[unique(groups)]
+    # group.LB <- group.LB[paste0("LB_", unique(groups))]
+
     if (!all(pmax(group.UB, group.LB) == group.UB) || !all(pmin(group.UB, group.LB) == group.LB))
       stop("Inconsistent constraint (group.UB smaller than group.LB)")
 
-    groups_mat <- sapply(unique(groups), function(x) x==groups)
+    #Previous - deprecated, as this does not allow securities to be in different groups at the same time.
+    # E.g. a Equity and Global label to an aset class
+    #         groups_mat <- sapply(unique(groups), function(x) x==groups)
+    #         groups_mat <- cbind(-groups_mat, groups_mat)
+
+    if(is.null(groups_mat)) {
+      groups_mat <- sapply(unique(groups), function(x) x==groups)
+      groups_mat <- cbind(-groups_mat, groups_mat)
+    }
+
     groups_mat <- cbind(-groups_mat, groups_mat)
-    group.UB <- -group.UB
 
   } else {
     groups_mat <- NULL
@@ -138,32 +146,26 @@ MV <- function(
     if (gamma != 0) {
       # With return target
       safeOpt <- purrr::safely(quadprog::solve.QP)
+
       Amat <- cbind(1, -dvec, -diag(n), diag(n), groups_mat)
-      bvec <- c(1, -gamma, -UB, LB, group.UB, group.LB)
-      opt_UB <- safeOpt(sigma, dvec, Amat, bvec, meq = 1)
-      Amat <- cbind(1, dvec, -diag(n), diag(n), groups_mat)
-      bvec <- c(1, gamma, -UB, LB, group.UB, group.LB)
-      opt_LB <- safeOpt(sigma, -dvec, Amat, bvec, meq = 1)
-      if (!is.null(opt_UB$result)) {
-        opt <- opt_UB$result
-      } else {
-        opt <- opt_LB$result
-      }
+      bvec <- c(1, -gamma, -UB, LB, -group.UB, group.LB)
+      opt <- safeOpt(sigma, dvec, Amat, bvec, meq = 1)
+
     } else {
+      safeOpt <- purrr::safely(quadprog::solve.QP)
       # Constraints
       Amat <- cbind(1, -diag(n), diag(n), groups_mat)
-      bvec <- c(1, -UB, LB, group.UB, group.LB)
+      bvec <- c(1, -UB, LB, -group.UB, group.LB)
       # Optimization
-      opt <- quadprog::solve.QP(sigma, dvec * gamma, Amat, bvec, meq = 1)
+      opt <- safeOpt(sigma, dvec * gamma, Amat, bvec, meq = 1)
     }
 
-    opt_weights <- opt$solution
+    opt_weights <- opt$result$solution
 
   }
 
-  names(opt_weights) <- asset_names
+  if(!is.null(opt_weights)) {names(opt_weights) <- asset_names}
 
   return(opt_weights)
 
 }
-

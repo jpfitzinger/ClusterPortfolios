@@ -34,9 +34,6 @@ hsig <- hSigma(sigma)
 MV(hsig)
 
 }
-\references{
-
-}
 \author{
 Johann Pfitzinger
 }

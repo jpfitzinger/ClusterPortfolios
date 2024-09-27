@@ -21,10 +21,11 @@
 #' @param group.LB scalar or \eqn{(N_groups\times 1)}{(N_groups x 1)} vector of lower bound group constraints.
 #' @param gamma risk aversion parameter. Default: \code{gamma = 0} returns the minimum variance portfolio.
 #' @param max_tilt maximum percentage reduction in the effective number of assets. Default: \code{max_tilt = 1} (no restriction).
+#' @param groups_mat Group constraints passed to MV.
+#' @param verbose Set to FALSE by default. If True, it returns the weights vector and the covariance matrix.
 #' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 #' @author Johann Pfitzinger
-#' @references
 #' @examples
 #' # Load returns of assets or portfolios
 #' data("Industry_10")
@@ -46,6 +47,8 @@ CHI <- function(
   group.LB = NULL,
   gamma = 0,
   max_tilt = 1,
+  groups_mat = NULL,
+  verbose = F,
   ...
   ) {
 
@@ -91,10 +94,20 @@ CHI <- function(
   # w <- MV(sigma = chi$sigma, mu = chi$mu, UB = UB, LB = LB, gamma = gamma,
   #         groups = groups, group.UB = group.UB, group.LB = group.LB)
   w <- MV(sigma = chi$sigma, mu = mu, UB = UB, LB = LB, gamma = gamma,
-          groups = groups, group.UB = group.UB, group.LB = group.LB)
+          groups = groups, group.UB = group.UB, group.LB = group.LB, groups_mat = groups_mat)
   # w <- chi$w
 
-  return(w)
+  if(verbose){
+
+    result <- list()
+    result$w <- w
+    result$sigma <- chi$sigma
+    result$gamma <- gamma
+    return(result)
+
+  } else {
+    return(w)
+  }
 
 }
 

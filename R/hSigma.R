@@ -12,8 +12,6 @@
 #' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times N)}{(N x N)} filtered covariance matrix.
 #' @author Johann Pfitzinger
-#' @references
-#'
 #' @examples
 #' # Load returns of assets or portfolios
 #' data("Industry_10")

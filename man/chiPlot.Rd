@@ -16,6 +16,8 @@ chiPlot(
   gamma = 0,
   max_tilt = 1,
   max_leaf_size = 3,
+  ymax = NULL,
+  horiz = FALSE,
   ...
 )
 }
@@ -41,6 +43,10 @@ chiPlot(
 \item{max_tilt}{maximum percentage reduction in the effective number of assets. Default: \code{max_tilt = 1} (no restriction).}
 
 \item{max_leaf_size}{maximum size of the leaf nodes. Default is \code{max_leaf_size=3}.}
+
+\item{ymax}{upper limit for y axis}
+
+\item{horiz}{rotate the dendrogram}
 
 \item{...}{arguments passed to \code{cluster::agnes} method.}
 }

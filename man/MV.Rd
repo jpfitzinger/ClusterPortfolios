@@ -12,6 +12,7 @@ MV(
   groups = NULL,
   group.UB = NULL,
   group.LB = NULL,
+  groups_mat = NULL,
   gamma = 0
 )
 }
@@ -50,9 +51,6 @@ data("Industry_10")
 rets <- Industry_10
 sigma <- cov(rets)
 MV(sigma, UB = 0.15)
-
-}
-\references{
 
 }
 \author{

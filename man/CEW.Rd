@@ -45,9 +45,6 @@ sigma <- cov(rets)
 CEW(sigma, UB = 0.15, n_clusters = 'auto')
 
 }
-\references{
-
-}
 \author{
 Johann Pfitzinger
 }

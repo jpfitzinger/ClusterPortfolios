@@ -59,9 +59,6 @@ sigma <- cov(rets)
 chiSigma(sigma)
 
 }
-\references{
-
-}
 \author{
 Johann Pfitzinger
 }

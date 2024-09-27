@@ -20,7 +20,6 @@
 #' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
 #' @author Johann Pfitzinger
-#' @references
 #'
 #' @examples
 #' # Load returns of assets or portfolios

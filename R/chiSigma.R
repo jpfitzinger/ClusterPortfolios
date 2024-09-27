@@ -22,7 +22,6 @@
 #' @param ... arguments passed to \code{cluster::agnes} method.
 #' @return A \eqn{(N \times N)}{(N x N)} filtered covariance matrix.
 #' @author Johann Pfitzinger
-#' @references
 #' @examples
 #' # Load returns of assets or portfolios
 #' data("Industry_10")
@@ -194,10 +193,11 @@ chiSigma <- function(
   }
 
   if (meta_loss == "ERC") {
-
+    # NK - ERC sigmas blow up... Please check below, w_ not used.
     .pRC <- function(w, w_mat, sigma) {
-      w <- as.numeric(w_mat %*% w)
       sigmaw <- crossprod(sigma, w)
+      w_ <- as.numeric(w_mat %*% w)
+
       pRC <- (w * sigmaw)/as.numeric(crossprod(w, sigmaw))
       d <- sum((pRC - 1/n_meta)^2)
       return(d)
