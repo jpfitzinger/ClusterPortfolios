@@ -3,6 +3,7 @@
 export(CEW)
 export(CHI)
 export(CMV)
+export(General_Opt)
 export(HRP)
 export(MV)
 export(NCO)

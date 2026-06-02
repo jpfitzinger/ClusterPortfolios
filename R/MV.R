@@ -14,14 +14,13 @@
 #' @param group.LB scalar or \eqn{(N_groups\times 1)}{(N_groups x 1)} vector of lower bound group constraints.
 #' @param gamma risk aversion parameter. Default: \code{gamma = 0}.
 #' @return A \eqn{(N \times 1)}{(N x 1)} vector of optimal portfolio weights.
-#' @author Johann Pfitzinger
+#' @author Johann Pfitzinger & Nico Katzke
 #' @examples
-#' # Load returns of assets or portfolios
-#' data("Industry_10")
-#' rets <- Industry_10
-#' sigma <- cov(rets)
-#' MV(sigma, UB = 0.15)
-#'
+#' data("spec")
+#' spec$n -> n; spec$gamma -> gamma; spec$sigma -> sigma; spec$mu -> mu; spec$group.LB->group.LB; spec$group.UB -> group.UB;
+#' spec$groups_mat -> groups_mat; spec$groups -> groups; spec$LB -> LB; spec$UB -> UB; spec$assets -> assets
+#' MV( sigma, mu = mu, UB = UB, LB = LB, groups = groups, group.UB = group.UB, group.LB = group.LB, groups_mat = groups_mat, gamma = gamma)
+#' MV_Roll_gamma <- seq(0.1, 150, length.out = 100) %>% as.list() %>% map_df(~MV( sigma, mu = mu, UB = UB, LB = LB, groups = groups, group.UB = group.UB, group.LB = group.LB, groups_mat = groups_mat, gamma = .))
 #' @export
 
 MV <- function(
@@ -72,10 +71,14 @@ MV <- function(
   if (!all(pmax(UB, LB) == UB) || !all(pmin(UB, LB) == LB))
     stop("Inconsistent constraint (UB smaller than LB)")
 
+
+  # GROUPS
+
+
   if (!is.null(groups)) {
 
+    if(!is.null(groups_mat) & !is.null(colnames(groups_mat))) groups <- colnames(groups_mat)
     n_groups <- length(unique(groups))
-    if (!all(names(groups) %in% asset_names)) stop("group names must be identical to asset names")
 
     # Fetch constraints
     if (is.null(group.UB)) {
@@ -105,8 +108,7 @@ MV <- function(
       group.LB <- group.LB
     }
 
-    if (!all(groups %in% names(group.UB)) | !all( paste0( "LB_", groups) %in% names(group.LB) ))
-      stop("Inconsistent constraint (missing group names in 'group.UB' or 'group.LB')")
+    if (!all(groups %in% names(group.UB)) | !all(groups %in% names(group.UB))) stop("Inconsistent constraint (missing group names in 'group.UB' or 'group.LB')")
 
     # Reordering messes with Amat later. remove:
     # group.UB <- group.UB[unique(groups)]
@@ -122,49 +124,68 @@ MV <- function(
 
     if(is.null(groups_mat)) {
       groups_mat <- sapply(unique(groups), function(x) x==groups)
-      groups_mat <- cbind(-groups_mat, groups_mat)
+      groups_mat <- cbind(groups_mat, -groups_mat)[, 1:ncol(groups_mat)]
     }
 
-    groups_mat <- cbind(-groups_mat, groups_mat)
+    # groups_mat <- cbind(-groups_mat, groups_mat)
 
   } else {
+
     groups_mat <- NULL
   }
 
-  if (all(dim(sigma) == 1)) {
 
-    opt_weights <- 1
+  if (all(dim(sigma) == 1)) { return(1) }
 
+  if (!is.null(mu)) {
+    dvec <- mu
   } else {
-
-    if (!is.null(mu)) {
-      dvec <- mu
-    } else {
-      dvec <- rep(0, n)
-    }
-
-    if (gamma != 0) {
-      # With return target
-      safeOpt <- purrr::safely(quadprog::solve.QP)
-
-      Amat <- cbind(1, -dvec, -diag(n), diag(n), groups_mat)
-      bvec <- c(1, -gamma, -UB, LB, -group.UB, group.LB)
-      opt <- safeOpt(sigma, dvec, Amat, bvec, meq = 1)
-
-    } else {
-      safeOpt <- purrr::safely(quadprog::solve.QP)
-      # Constraints
-      Amat <- cbind(1, -diag(n), diag(n), groups_mat)
-      bvec <- c(1, -UB, LB, -group.UB, group.LB)
-      # Optimization
-      opt <- safeOpt(sigma, dvec * gamma, Amat, bvec, meq = 1)
-    }
-
-    opt_weights <- opt$result$solution
-
+    dvec <- rep(0, n)
   }
 
+    # With return target
+    safeOpt <- purrr::safely(quadprog::solve.QP)
+
+    # Deprecated approach:
+    # Using gamma as a hard constraint as below --> produces corner solutions.
+    # This format is a Return-maximisation with a risk penalty, BUT with a cap on expected returns...
+    # Amat <- cbind(1, -dvec, -diag(n), diag(n), groups_mat)
+    # bvec <- c(1, -gamma, -UB, LB, -group.UB, group.LB)
+    # opt <- safeOpt(sigma, dvec, Amat, bvec, meq = 1)
+
+    # New approach:
+    # The following fixes the objective tradeoff implicitly to be:
+    # max μ′w − gamma x w′Σ w
+    # gamma applied to covariance - so sensitivity is to cov, not return capping.
+    # Gamma now a proper Risk aversion parameter, as opposed to a coinstraint on returns.
+    # Small gamma → aggressive / return-seeking, big gamma: conservative
+    # Thus: U(w) = μ′w − γ x σ x 2(w)
+
+    Amat <- cbind( 1, -diag(n), diag(n), -groups_mat, groups_mat)
+    bvec <- c( 1,-UB,LB,-group.UB,group.LB)
+
+    if (gamma <= 0) stop("gamma must be > 0")
+    Dmat <- 2 * sigma
+    dvec_use <- dvec / gamma
+
+    # This is gives us: max (mu′w − gamma w ′ Σ w)
+    # QP minimises 0.5 x'Dmat x - dvec'x:
+
+    opt <- safeOpt(Dmat      = Dmat,
+                   dvec      = dvec_use,
+                   Amat      = con$Amat,
+                   bvec      = con$bvec,
+                   meq       = 1)
+
+    if(!is.null(opt$error)) return(stop(glue::glue("Optimization Error:\n\n {opt$error} \n\n")))
+    opt_weights <- opt$result$solution
+
+
   if(!is.null(opt_weights)) {names(opt_weights) <- asset_names}
+  if(!is.null(opt_weights) & !is.null(groups_mat)) {
+    if(!all(opt_weights %*% groups_mat <= group.UB+1e-8)) stop("Violation of UB")
+    if(!all(opt_weights %*% groups_mat >= group.LB-1e-8)) stop("Violation of LB")
+  }
 
   return(opt_weights)
 

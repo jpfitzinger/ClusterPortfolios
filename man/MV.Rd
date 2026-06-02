@@ -46,13 +46,12 @@ The MV solution is calculated using \code{quadprog}. When \code{gamma} is left a
 default setting, the minimum variance portfolio is computed.
 }
 \examples{
-# Load returns of assets or portfolios
-data("Industry_10")
-rets <- Industry_10
-sigma <- cov(rets)
-MV(sigma, UB = 0.15)
-
+data("spec")
+spec$n -> n; spec$gamma -> gamma; spec$sigma -> sigma; spec$mu -> mu; spec$group.LB->group.LB; spec$group.UB -> group.UB;
+spec$groups_mat -> groups_mat; spec$groups -> groups; spec$LB -> LB; spec$UB -> UB; spec$assets -> assets
+MV( sigma, mu = mu, UB = UB, LB = LB, groups = groups, group.UB = group.UB, group.LB = group.LB, groups_mat = groups_mat, gamma = gamma)
+MV_Roll_gamma <- seq(0.1, 150, length.out = 100) \%>\% as.list() \%>\% map_df(~MV( sigma, mu = mu, UB = UB, LB = LB, groups = groups, group.UB = group.UB, group.LB = group.LB, groups_mat = groups_mat, gamma = .))
 }
 \author{
-Johann Pfitzinger
+Johann Pfitzinger & Nico Katzke
 }
